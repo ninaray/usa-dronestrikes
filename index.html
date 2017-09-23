@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<head>
+<title>US Air and Drone Strikes in the 21st Century</title>
+	<link href="https://fonts.googleapis.com/css?family=Abel" rel="stylesheet">
+	<script src="https://d3js.org/d3.v4.min.js"></script>
+	<script src="http://d3js.org/topojson.v2.min.js"></script>
+	<style>
+        
+        path:hover {
+           fill-opacity: .8;
+        }
+        
+        body {
+            font-family: "Abel";
+            font-size: 25px;
+            text-align: center;
+            background-color: #5d5d5d;
+            color: gainsboro;
+        }
+        
+        svg {
+            background-color: #6f6f6f;
+        }
+
+        .detailsvg {
+            background-color: #5d5d5d;
+            border: 0px;        
+        }
+        
+        div {
+            display: inline-block;
+            margin: 2px 4px 2px 4px;
+        }
+        
+        #mainsvg {
+            display: block;
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+            width: 83%;
+        }
+        
+        #main {
+            margin-top: 40px;;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+            align-self: center;
+            width: 83%;
+        }
+        
+        h1 {
+            font-size: 85px;
+            color: white;
+            text-shadow: 2px 1px 2px #262626;
+                    }
+        
+        #auto {
+            display: block;
+            font-size: 24pt;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            align-self: center;  
+            text-decoration: none;
+            color: white;   
+        }
+        
+        #auto:hover {
+            color: gainsboro;
+        }
+        
+        #detailsvg {
+            width: 83%;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            align-self: center;    
+        }
+        
+        #afghanSideDiv, #pakSideDiv, #yemSideDiv, #somSideDiv {
+            font-size: 45px;
+            padding: 5px;
+            margin: none;
+            display: none;
+            text-align: left;
+        }
+      
+        /** Hiding slider */
+        .hide-me {
+            visibility: hidden;
+            opacity: 0;
+        }
+
+        .colorScale line{
+          stroke:  gainsboro;
+        }
+
+        .colorScale path{
+          stroke:  gainsboro;
+        }
+
+        .colorScale text{
+          fill:  gainsboro;
+        }
+}
+        
+    </style>
+</head>
+<body>
+
+<div id="main">
+    <h1>U.S Air and Drone Strikes in the 21st Century</h1>
+    <p>Air strikes and drone warfare have been a part of the United States' defense structure since 2002. Across Yemen, Somalia, Pakistan and, more recently, Afghanistan, this data takes a look at strikes authorized under the Obama administration, the Bush administration, and the most heavily bombed regions to this day. <b>Have drone and air strikes become more accurate over the years? Is the U.S avoiding more and more civilian deaths?</b></p> 
+        
+    <p>Click on any map to view more details about that country, or click "Start Visualization" see an overview of the past 15 years.</p>
+    
+</div>        
+  
+<!-- DIV TAGS -->    
+    
+<div id="auto"><b>Start Visualization</b></div>
+    
+    <!-- DIV TAG FOR DETAILS SVG -->
+    <div id="detailsvg"></div>    
+    
+<div id="mainsvg">   
+    
+     <!-- DIV TAG FOR AFGHANISTAN SVG -->    
+    <div id="afghansvg"></div>
+    <div id="afghanSideDiv"><p>The first U.S airstrike in Afghanistan was recorded on <b>January 1, 2015</b>, in <b>Spera District, Khost</b>.</p></div>
+    <!-- DIV TAG FOR PAKISTAN SVG -->
+    <div id="pakistansvg"></div>
+    <div id="pakSideDiv"></div>    
+    <!-- DIV TAG FOR YEMEN SVG -->
+    <div id="yemensvg"></div>
+    <div id="yemSideDiv"></div>    
+    <!-- DIV TAG FOR SOMALIA SVG -->
+    <div id="somaliasvg"></div>
+    <div id="somSideDiv"></div>
+    
+</div>
+
+<!-- START SCRIPT -->    
+    
+<script>
+
+// DEFINE REGIONAGGREGATE, FOR AGGREGATE COLLECTION
+    
+    class regionAggregate {
+        constructor(startDate, endDate) {
+            this.sd = startDate;
+            this.ed = endDate;
+            this.strikes = 0;
+		    this.lowHit = 0;
+		    this.highHit = 0;
+		    this.lowCiv = 0;
+		    this.highCiv = 0;
+		    this.lowChild = 0;
+		    this.highChild = 0;
+		    this.link = [];
+        }
+    }
+
+// VARIOUS ATTRIBUTES FOR PROJECTION
+       
+    // var country: To name each projection
+    var countryNames = ["Afghanistan", "Pakistan", "Yemen", "Somalia"];
+    // var centers: needed to center particular country
+    var centers = [[76, 30], [82, 25.5], [57, 12], [58, -0.5]];
+    // var searchElements: parse region name in JSON file
+    var searchElements = ["lflt:label_text", "meso:name_en", "lflt:label_text", "lflt:label_text"]
+    /** var scaleFactor: enlarging each map
+    var scaleFactor = [800, 2300, 2600, 3200]; */
+    
+    var yearArr = [2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]    
+        
+/** CREATE SVGS */    
+    
+// CREATE AFGHANISTAN SVG            
+    
+    var afghanContainer = d3.select("#afghansvg").append("svg")
+		.attr("height", 300)
+		.attr("width", 500);
+    
+	var afghansvg = afghanContainer.append("g");
+
+// CREATE TOOLTIP    
+    
+    var tooltip = d3.select('body').append('div')
+            .attr('class', 'hidden tooltip');
+    
+// CREATE PAKISTAN SVG    
+    
+    var pakContainer = d3.select("#pakistansvg").append("svg")
+		.attr("height", 300)
+		.attr("width", 500);
+    
+	var paksvg = pakContainer.append("g");
+    
+// CREATE YEMEN SVG    
+    
+    var yemContainer = d3.select("#yemensvg").append("svg")
+		.attr("height", 300)
+		.attr("width", 500);
+    
+    var yemsvg = yemContainer.append("g");
+    
+// CREATE SOMALIA SVG
+    
+    var somContainer = d3.select("#somaliasvg").append("svg")
+		.attr("height", 300)
+		.attr("width", 500); 
+    
+    var somsvg = somContainer.append("g");  
+    
+// CREATE DETAILS SVG
+    
+    var detailsvg = d3.select("#detailsvg").append("svg")
+        .attr("width", 800)
+        .attr("height", 100)
+        .attr("class", "detailsvg");
+    
+    // Color key
+    detailsvg.append("rect")
+        .attr("x", 484-230)
+        .attr("y", 26)
+        .attr("height", 15)
+        .attr("width", 64*3/9)
+        .attr("fill", "#f7fcf5");
+    
+    detailsvg.append("line")
+        .attr("x1", 484-230)
+        .attr("x2", 484-230)
+        .attr("y1", 26)
+        .attr("y2", 45)
+        .style("stroke-width", 1)
+        .style("stroke", "#220747");
+    
+    detailsvg.append("text")
+        .attr("x", 481.5-230)
+        .attr("y", 56)
+        .attr("font-size", "10")
+        .style("font-weight", "bold")
+        .style("fill", "#220747")
+        .text("0");
+        
+    
+    detailsvg.append("rect")
+        .attr("x", 484+(64*3/9)-230)
+        .attr("y", 26)
+        .attr("height", 15)
+        .attr("width", 64*3/9)
+        .attr("fill", "#e5f5e0");
+    
+    detailsvg.append("rect")
+        .attr("x", 484+((64*3/9)*2)-230)
+        .attr("y", 26)
+        .attr("height", 15)
+        .attr("width", 64*3/9)
+        .attr("fill", "#c7e9c0");
+    
+    detailsvg.append("rect")
+        .attr("x", 484+((64*3/9)*3)-230)
+        .attr("y", 26)
+        .attr("height", 15)
+        .attr("width", 64*3/9)
+        .attr("fill", "#a1d99b");
+    
+    detailsvg.append("rect")
+        .attr("x", 484+((64*3/9)*4)-230)
+        .attr("y", 26)
+        .attr("height", 15)
+        .attr("width", 64*3/9)
+        .attr("fill", "#74c476");
+    
+    detailsvg.append("rect")
+        .attr("x", 484+((64*3/9)*5)-230)
+        .attr("y", 26)
+        .attr("height", 15)
+        .attr("width", 64*3/9)
+        .attr("fill", "#41ab5d");
+    
+    detailsvg.append("rect")
+        .attr("x", 484+((64*3/9)*6)-230)
+        .attr("y", 26)
+        .attr("height", 15)
+        .attr("width", 64*3/9)
+        .attr("fill", "#238b45");
+    
+    detailsvg.append("rect")
+        .attr("x", 484+((64*3/9)*7)-230)
+        .attr("y", 26)
+        .attr("height", 15)
+        .attr("width", 64*3/9)
+        .attr("fill", "#006d2c");
+    
+    detailsvg.append("rect")
+        .attr("x", 484+((64*3/9)*8)-230)
+        .attr("y", 26)
+        .attr("height", 15)
+        .attr("width", 64*3/9)
+        .attr("fill", "#00441b");
+    
+    detailsvg.append("line")
+        .attr("x1", 484+((64*3/9)*8)-230)
+        .attr("x2", 484+((64*3/9)*8)-230)
+        .attr("y1", 26)
+        .attr("y2", 45)
+        .style("stroke-width", 1)
+        .style("stroke", "#220747");
+    
+    detailsvg.append("text")
+        .attr("x", 481.5+((64*3/9)*8)-230)
+        .attr("y", 56)
+        .attr("font-size", "10")
+        .style("font-weight", "bold")
+        .text("64+")
+        .style("fill", "#220747");
+    
+    detailsvg.append("text")
+        .attr("x", 465)
+        .attr("y", 38)
+        .attr("font-size", "14")
+        .style("font-weight", "bold")
+        .text("Strikes Per Year")
+        .style("fill", "gainsboro");
+    
+    function timescale(yearArray) {
+	    for (var i=0; i < yearArray.length; i++) {
+	        detailsvg.append("text")
+	            .attr("x", 46+i*47)
+	            .attr("y", 100)
+	            .text(yearArr[i])
+	            .attr("font-size", 15)
+	            .style("text-anchor", "middle")
+                .style("fill", "gainsboro");
+	    };
+	}
+    
+/** VARIOUS OTHER NECESSARY VARIABLES */    
+    
+    // References to active map, null otherwise
+    
+    var allContainers = [afghanContainer, pakContainer, yemContainer, somContainer];
+    var allSideDivs = [d3.select("#afghanSideDiv"), d3.select("#pakSideDiv"), d3.select("#yemSideDiv"), d3.select("#somSideDiv")]
+    var activeMap = null;
+    var changedWhenLarge = false;
+    var allData = null;
+    var allMaps = null;
+    
+    // Map projections
+    
+    var projection = d3.geoMercator();
+    var pathGenerator;
+    
+    // Tooltip stuff
+    
+    var tooltip = d3.select("body")
+	.append("div")
+	.style("position", "absolute")
+	.style("z-index", "10")
+	.style("visibility", "hidden");
+    
+    // Global variables
+    
+    var rawAfghandata;
+    var rawPakdata;
+    var rawSomdata;
+    var rawYemdata;
+    var mapAfgandata;
+    var mapPakdata;
+    var mapSomdata;
+    var mapYemdata;
+    var afghanAggregate;
+    var pakAggregate;
+    var yemAggregate;
+    var somAggregate;
+        
+    var year = 2017;
+
+    var mapAggregate;
+    
+    // Slider
+    
+    var slider = d3.select("#detailsvg").append("div").append("input");
+
+/** LOAD IN DATA */
+    
+    d3.queue()
+        .defer(d3.csv, "data/Afghanistan.csv")
+        .defer(d3.csv, "data/Pak.csv")
+        .defer(d3.csv, "data/Somalia.csv")
+        .defer(d3.csv, "data/Yemen.csv")
+        .defer(d3.json, "maps/afghanistan_provinces.geojson")
+        .defer(d3.json, "maps/pakistan_counties.geojson")
+        .defer(d3.json, "maps/somalia_regions.geojson")
+        .defer(d3.json, "maps/yemen_regions.geojson")
+        .await(function (error, rawAfgan, rawPak, rawSom, rawYem, mapAfgan, mapPak, mapSom, mapYem) {
+				
+            /** Call showMap(). Variables s and e are used to define the beginning and end dates to track data in. These take inputs from the slider. */
+            
+            slider.attr("type", "range").attr("class", "slider")
+               .style("width", "715px")
+               .attr("min", "2002")
+	           .attr("max", "2017")
+	           .attr("step", "1")
+               .attr("value", year);
+        
+            slider.on("input", function () {
+                //get year input
+                year = this.value;
+                updateMapAndCircles(year);       
+            });  
+        
+            allData = [rawAfgan, rawPak, rawYem, rawSom];
+            allMaps = [mapAfgan, mapPak, mapYem, mapSom];
+        
+            // Add years to timescale    
+            timescale(yearArr); 
+        
+            // Call showMap
+            var s = new Date(year, 1, 1);
+            var e = new Date(year, 12, 31);
+            showMap(0, rawAfgan, mapAfgan, afghansvg, s, e);
+            showMap(1, rawPak, mapPak, paksvg, s, e);
+            showMap(2, rawYem, mapYem, yemsvg, s, e);
+            showMap(3, rawSom, mapSom, somsvg, s, e);
+        
+        // ON CLICK FUNCTIONS
+        
+            // Handle onclicks for enlarging/decreasing the size of the maps
+            afghanContainer.on("click", function(d) {
+                justResized = true;
+                if (afghanFirstClick) { // Expand
+                    activeMap = 0 // Afghanistan map
+                    afghanFirstClick = false; // We clicked once
+
+                    growContainer(afghanContainer, "#afghanSideDiv");
+                    shrinkContainer(pakContainer, "#pakSideDiv");
+                    shrinkContainer(yemContainer, "#yemSideDiv");
+                    shrinkContainer(somContainer, "#somSideDiv");
+                    
+                    d3.event.stopPropagation();
+                } 
+                else { // Shrink
+                    afghanFirstClick = true; // We reset back to 0 click state
+
+                    returnNormal(afghanContainer);
+                }
+                updateMapAndCircles(slider.attr("value"));                
+                     
+            });
+        
+            pakContainer.on("click", function(d) {
+                justResized = true;
+                if (pakFirstClick) {
+                    activeMap = 1
+                    pakFirstClick = false;
+                    
+                    growContainer(pakContainer, "#pakSideDiv");
+                    shrinkContainer(afghanContainer, "#afghanSideDiv");
+                    shrinkContainer(yemContainer, "#yemSideDiv");
+                    shrinkContainer(somContainer, "#somSideDiv");            
+                    
+                    d3.event.stopPropagation();
+                } 
+                else {
+                    pakFirstClick = true;
+                    returnNormal(pakContainer);
+                }
+                updateMapAndCircles(slider.attr("value"));
+           
+            });
+        
+            yemContainer.on("click", function(d) {
+                justResized = true;
+                if (yemFirstClick) {
+                    activeMap = 2
+                    yemFirstClick = false;
+                    
+                    growContainer(yemContainer, "#yemSideDiv");
+                    shrinkContainer(afghanContainer, "#afghanSideDiv");
+                    shrinkContainer(pakContainer, "#pakSideDiv");
+                    shrinkContainer(somContainer, "#somSideDiv");            
+
+                    d3.event.stopPropagation();
+                } 
+                else {
+                    yemFirstClick = true;
+                    returnNormal(yemContainer);
+                }
+                updateMapAndCircles(slider.attr("value"));           
+            });
+        
+            somContainer.on("click", function(d) {
+                justResized = true;
+                if (somFirstClick) {
+                    activeMap = 3
+                    somFirstClick = false;
+                    
+                    growContainer(somContainer, "#somSideDiv");
+                    shrinkContainer(afghanContainer, "#afghanSideDiv");
+                    shrinkContainer(pakContainer, "#pakSideDiv");
+                    shrinkContainer(yemContainer, "#yemSideDiv");            
+
+                    d3.event.stopPropagation();
+                } 
+                else {
+                    somFirstClick = true;
+                    returnNormal(somContainer);
+                }
+                updateMapAndCircles(slider.attr("value"));   
+            });      
+                
+        // PASS IN DATA TO GLOBAL VARIABLES
+        
+            rawAfghandata = rawAfgan;
+            rawPakdata = rawPak;
+            rawSomdata = rawYem;
+            rawYemdata = rawSom;
+            mapAfgandata = mapAfgan;
+            mapPakdata = mapPak;
+            mapYemdata = mapSom;
+            mapSomdata = mapYem;
+
+        });
+    
+/** UPDATEMAPANDCIRCLES: Redraws map and circles when slider input is triggered */    
+
+    // Reformats single map data based on slider input
+    function updateMapAndCircles(y) {            
+        //If a map is enlarged, only change that one, otherwise update all.
+        if (activeMap != null) {
+            activeCont = allContainers[activeMap]; //get the active map's svg    
+            (activeCont.select("g")).attr("transform", "scale(1)"); //change the scale to maintiain size between input changes
+            changedWhenLarge = true; //set flag so that returnNormal() resizes correctly
+
+            //redraw map
+            (activeCont.select("g")).selectAll("path").remove();
+            
+            showMap(activeMap, allData[activeMap], allMaps[activeMap], activeCont.select("g"), new Date(y, 1, 1), new Date(y, 12, 31));
+        } 
+        
+        else {
+            console.log("not active");
+            //update all maps
+            afghansvg.attr("transform", "scale(1)");
+            paksvg.attr("transform", "scale(1)");
+            yemsvg.attr("transform", "scale(1)");
+            somsvg.attr("transform", "scale(1)");
+
+            afghansvg.selectAll("path").remove();
+
+            showMap(0, allData[0], allMaps[0], afghansvg, new Date(y, 1, 1), new Date(y, 12, 31));
+
+            paksvg.selectAll("path").remove();
+            showMap(1, allData[1], allMaps[1], paksvg, new Date(y, 1, 1), new Date(y, 12, 31));
+            
+            yemsvg.selectAll("path").remove();
+            showMap(2, allData[2], allMaps[2], yemsvg, new Date(y, 1, 1), new Date(y, 12, 31)); 
+            
+            somsvg.selectAll("path").remove()
+            showMap(3, allData[3], allMaps[3], somsvg, new Date(y, 1, 1), new Date(y, 12, 31)); 
+            
+        }                   
+    }
+    
+    function showMap(index, countrydata, countryMap, svg, timeStart, timeEnd) {
+     	//get the svg's container
+        var svgContainer = d3.select(svg.node().parentNode);
+        
+        svgContainer.append("text") //title 
+            .attr("x", 30)
+            .attr("y", 55)
+            .text(countryNames[index])
+            .attr("font-size", "40px")
+            .attr("fill", "gainsboro")
+        //get the projection
+        projection
+        .fitExtent([[145,30],[svgContainer.attr("width") - 30, svgContainer.attr("height") - 30]], countryMap);
+        pathGenerator = d3.geoPath().projection(projection);
+
+    //PROCESS THE DATA 
+        // Dictionary to map region to particular region data based on date range
+        mapAggregate = {};
+  
+        // Loop through each strike data (each row)
+        var i;
+        for(i = 0; i < countrydata.length; i++) {
+        var data = countrydata[i];
+          
+          // Reformatting date into new Date object, called dataDate
+            var dateElements = data["Date"].split("/");
+            var dataDate = new Date(dateElements[2], dateElements[1], dateElements[0]);
+
+  
+		        // Check if dataDate is within time frame
+            if (dataDate < timeEnd && dataDate > timeStart ) {
+                  
+        			 // If there is no entry for this region, make a new one, otherwise get that entry
+                     /** If Region name exists in mapAggregate dictionary, retrieve it. Otherwise create new Region key. (Order is switched) */
+  	      		var checkRegion = (data["Region"]).trim();
+                if (mapAggregate[checkRegion] == undefined || mapAggregate[checkRegion] == null) {
+                    var r = new regionAggregate(timeStart, timeEnd);
+                } 
+                  
+                else {
+                    var r = mapAggregate[checkRegion];
+                }
+
+                    // Update entry for this region based on this piece of data.
+  	      		     r.strikes++;
+  				      r.lowHit = r.lowHit + Number(data["MinTotal"]);
+  				      r.highHit = r.highHit + Number(data["MaxTotal"]);
+  				      r.lowCiv = r.lowCiv + Number(data["MinCivilians"]);
+  				      r.highCiv = r.highCiv + Number(data["MaxCivilians"]);
+  				      r.lowChild = r.lowChild + Number(data["MinChildren"]);
+  				      r.highChild = r.highChild + Number(data["MaxChildren"]);
+            
+                    // OPTIONAL: Add link if it exists
+  				      if (data["link2"] != undefined || data["link2"] != null) {
+  					         this.link.append(data["link2"]);
+  				      }
+  				
+                    // Insert Region key/update Region key in mapAggregate
+                    mapAggregate[checkRegion] = r;
+            
+        	    }
+            }
+        
+            //console.log(maxAggregate);
+            if (index == 0) afghanAggregate = mapAggregate;
+            else if (index == 1) pakAggregate = mapAggregate;
+            else if (index == 2) somAggregate = mapAggregate;
+            else if (index == 3) yemAggregate = mapAggregate;
+          
+    // CREATE THE SCALE    
+        
+          // Returns maximum strike count amongst all regions
+          var maxStrike = d3.max(d3.values(mapAggregate), function(d) { 
+          		return d.strikes;
+          	});
+
+         //max killed in one region
+        var maxKilled = d3.max(d3.values(mapAggregate), function(d) {
+            return d.highHit;
+        })
+        
+          // Strike count scale
+          var strikeScale = d3.scaleQuantize().domain([0, Math.log(maxKilled)]).range(["#f7fcf5", "#e5f5e0", "#c7e9c0", "#a1d99b", "#74c476", "#41ab5d", "#238b45", "#006d2c", "#00441b"]);
+        
+        //death scale
+        var deathScale = d3.scaleLinear().domain([0, maxKilled]).range([520, 150]);
+        var deathScaleRev = d3.scaleLinear().domain([0, maxKilled]).range([150, 520]);
+          
+  		// Draw map
+  		var regions = countryMap.features;
+  		svg.selectAll('path')
+  	    .data(regions)
+  	    .enter().append('path')
+  	        .attr('d', pathGenerator)
+  	        .style('fill',function(d) {
+  	             /** If there is no entry in mapAggregate for this region, return 0, otherwise get the scaled count of strikes in that region. */
+                // searchElement uses the appropriate string to parse based on the JSON file
+  	            var searchElement = searchElements[index];    
+        
+                if (mapAggregate[d["properties"][searchElement]] == undefined || mapAggregate[d["properties"][searchElement]] == null || maxStrike == undefined)    {
+                    console.log(d);
+                    return "#F4FDF1"; 
+                }
+                else    return strikeScale(Math.log(mapAggregate[d["properties"][searchElement]].strikes));
+              })
+           .attr("stroke", "#220747")
+  		   .style("stroke-width", .5)
+           .on("mouseover", function(d){
+                 tooltip.style("visibility", "visible")
+                     .html(d["properties"][searchElements[index]])
+                     .style("background-color", "#FAFAFA")
+                    .style("color", "black")
+                     .style("padding", ".2em")
+                     .style("text-shadow", "#f5f5f5 0 1px 0")
+                     .style("border-radius", "5px")
+                     .style("opacity", "0.9"); 
+
+                var regionName = d["properties"][searchElements[index]];
+
+                var sideDiv = allSideDivs[index];
+                sideDiv.selectAll("*").remove();
+                barChartSvg = sideDiv.append("svg");
+
+                barChartSvg
+                .attr("width", "250")
+                .attr("height", "550");
+
+                barChartSvg
+                .append("text")
+                .attr("x", 200)
+                .attr("y", 20)
+                .text(slider.property("value"))
+                .attr("fill", "gainsboro")
+                .attr("font-size", 20)
+                .attr("alignment-baseline","central");
+
+                barChartSvg
+                .append("text")
+                .attr("x", 125)
+                .attr("y", 110)
+                .text("Death Count Range")
+                .attr("fill", "gainsboro")
+                .attr("text-anchor", "middle")
+                .attr("font-size", 20)
+                .attr("alignment-baseline","central");
+
+                barChartSvg
+                .append("text")
+                .attr("x", 125)
+                .attr("y", 65)
+                .text(regionName)
+                .attr("fill", "gainsboro")
+                .attr("text-anchor", "middle")
+                .attr("font-size", 40)
+                .attr("alignment-baseline","central");
+
+                barChartSvg
+                .append("text")
+                .attr("x", 45)
+                .attr("y", 138)
+                .text("Total")
+                .attr("fill", "gainsboro")
+                .attr("text-anchor", "middle")
+                .attr("font-size", 16)
+                .attr("alignment-baseline","central");
+
+                barChartSvg
+                .append("text")
+                .attr("x", 125)
+                .attr("y", 138)
+                .attr("fill", "gainsboro")
+                .text("Civilians")
+                .attr("text-anchor", "middle")
+                .attr("font-size", 16)
+                .attr("alignment-baseline","central");
+
+                barChartSvg
+                .append("text")
+                .attr("x", 207)
+                .attr("y", 138)
+                .attr("fill", "gainsboro")
+                .text("Childen")
+                .attr("text-anchor", "middle")
+                .attr("font-size", 16)
+                .attr("alignment-baseline","central");
+
+                var axis = d3.axisLeft(deathScale);
+                barChartSvg.append("g")
+                .call(axis)
+                .attr("class", "colorScale")
+                .style("stroke", "gainsboro")
+                .style("color", "gainsboro")
+                .attr("transform", "translate(50,00)");
+
+                barChartSvg.append("g")
+                .call(axis)
+                .attr("class", "colorScale")
+                .attr("transform", "translate(130,00)");
+
+                barChartSvg.append("g")
+                .call(axis)
+                .attr("class", "colorScale")
+                .attr("transform", "translate(210,00)");
+
+                barChartSvg
+                .append("rect")
+                .attr("x", 38)
+                .attr("y",
+                    function() {
+                    if (mapAggregate[regionName] != null || mapAggregate[regionName] != undefined) {
+                        return deathScale(mapAggregate[regionName]["highHit"])}
+                    else {return 520}})
+                .attr("width", 24)
+                .attr("height", function() {
+                    if (mapAggregate[regionName] != null || mapAggregate[regionName] != undefined) {
+                        if (mapAggregate[regionName]["lowHit"] == mapAggregate[regionName]["highHit"]){
+                            return 3;
+                        } else {
+                            return deathScale(mapAggregate[regionName]["lowHit"]) - deathScale(mapAggregate[regionName]["highHit"]);
+                        }
+                    } else {return 3}})
+                .attr("opacity", .3)
+                .attr("fill", "#389657")
+
+                barChartSvg
+                .append("rect")
+                .attr("x", 118)
+                .attr("y",
+                    function() {
+                    if (mapAggregate[regionName] != null || mapAggregate[regionName] != undefined) {
+                        return deathScale(mapAggregate[regionName]["highCiv"])}
+                    else {return 520}})
+                .attr("width", 24)
+                .attr("height", function() {
+                    if (mapAggregate[regionName] != null || mapAggregate[regionName] != undefined) {
+                        if (mapAggregate[regionName]["lowCiv"] == mapAggregate[regionName]["highCiv"]){
+                            return 3;
+                        } else {
+                            return deathScale(mapAggregate[regionName]["lowCiv"]) - deathScale(mapAggregate[regionName]["highCiv"]);
+                        }
+                    } else {return 3}})
+                .attr("opacity", .3)
+                .attr("fill", "#389657")
+
+                barChartSvg
+                .append("rect")
+                .attr("x", 198)
+                .attr("y",
+                    function() {
+                    if (mapAggregate[regionName] != null || mapAggregate[regionName] != undefined) {
+                        return deathScale(mapAggregate[regionName]["highChild"])}
+                    else {return 520}})
+                .attr("width", 24)
+                .attr("height", function() {
+                    if (mapAggregate[regionName] != null || mapAggregate[regionName] != undefined) {
+                        if (mapAggregate[regionName]["lowChild"] == mapAggregate[regionName]["highChild"]){
+                            return 3;
+                        } else {
+                            return deathScale(mapAggregate[regionName]["lowChild"]) - deathScale(mapAggregate[regionName]["highChild"]);
+                        }
+                    } else {return 3}})
+                .attr("opacity", .3)
+                .attr("fill", "#389657")
+            
+                d3.event.stopPropagation();
+            })
+           .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
+           .on("mouseout", function(){return tooltip.style("visibility", "hidden");});
+      }
+    
+// INTERACTIVE TRANSITIONS    
+    
+    // EXPANDING AND SHRINKING MAPS
+    
+    // Map is expanded if:
+    var expanded = false;
+    var justResized = false;  
+    
+    function returnNormal(activeContainer) {
+           expanded = false;
+        
+           //Change div sizes back to original
+            afghanContainer
+                .transition()
+                .duration(750)
+                .attr("width", 500)
+                .attr("height", 300)
+                .style("display","block"); 
+           
+            d3.select("#afghanSideDiv")
+                .style("width", "0px")
+                .style("height", "0px")
+                .style("display", "none");
+            
+            pakContainer
+                .transition()
+                .duration(750)
+                .attr("width", 500)
+                .attr("height", 300)
+                .style("display","block");
+           
+           d3.select("#pakSideDiv")
+                    .style("width", "0px")
+                    .style("height", "0px")
+                    .style("display", "none");
+            
+            yemContainer
+                .transition()
+                .duration(750)
+                .attr("width", 500)
+                .attr("height", 300)                
+                .style("display","block");
+           
+            d3.select("#yemSideDiv")
+                .style("width", "0px")
+                .style("height", "0px")                
+                .style("display", "none");
+;
+        
+            somContainer
+                .transition()
+                .duration(750)
+                .attr("width", 500)
+                .attr("height", 300)                
+                .style("display","block");
+         
+           d3.select("#somSideDiv")
+                    .style("width", "0px")
+                    .style("height", "0px")                
+                    .style("display", "none");
+        
+            //scale the changed map
+            var scale
+            if (changedWhenLarge) {
+                //reset map to smaller scale
+                scale = 500/1000;
+            } else {
+                scale = 1;
+            }
+        
+            activeContainer.select("g")
+                .transition()
+                .duration(750)
+                .attr("transform", "scale(" + scale + ")");
+            
+            activeMap = null;
+        }
+    
+        function shrinkContainer(container, sidediv) {
+            container
+            .transition()
+            .duration(700)
+            .style("display","none");            
+            //.attr("width", 0)
+            //.attr("height", 0);
+            
+            d3.select(sidediv)
+                //.style("width", "0px")
+                //.style("height", "0px")
+                .style("display", "none");
+        }
+    
+        function growContainer(container, sidediv) {
+            expanded = true;
+            
+            
+            if (container == yemContainer || container == somContainer) {
+                container
+                .transition()
+                .duration(750)
+                .attr("width", 800)
+                .attr("height", 550);
+  
+                //enlarge map
+                container.select("g")
+                  .transition()
+                  .duration(750)
+                  .attr("transform", "scale(" + (800/500) + ")");
+            
+                d3.select(sidediv)
+                .transition()
+                .duration(750)
+                .style("width", "240px")
+                .style("height", "200px")
+                .style("display", "inline-block");
+            }
+            
+            else {            
+                
+                container
+                .transition()
+                .duration(750)
+                .attr("width", 900)
+                .attr("height", 550);
+  
+                //enlarge map
+                container.select("g")
+                  .transition()
+                  .duration(750)
+                  .attr("transform", "scale(" + (900/500) + ")");
+            
+                d3.select(sidediv)
+                .transition()
+                .duration(750)
+                .style("width", "240px")
+                .style("height", "200px")
+                .style("display", "inline-block");
+            }
+            
+            d3.select("#mainsvg")
+                .style("width", "95%");
+        }
+    
+        var afghanFirstClick = true;
+        var pakFirstClick = true;
+        var yemFirstClick = true;
+        var somFirstClick = true;
+    
+    // AUTO VISUALIZATION
+    d3.select("#auto").on("click", function() {
+        detailsvg.selectAll("line").remove();
+        
+        // Disable any expansion
+        afghanContainer.on("click", null);
+        pakContainer.on("click", null);
+        somContainer.on("click", null);
+        yemContainer.on("click", null); 
+        
+        // "Reset" slider
+        slider.property("value", 2002);
+
+        // Need to re-add lines in legend
+        detailsvg.append("line")
+        .attr("x1", 484-230)
+        .attr("x2", 484-230)
+        .attr("y1", 26)
+        .attr("y2", 45)
+        .style("stroke-width", 1)
+        .style("stroke", "#220747");
+        
+        detailsvg.append("line")
+        .attr("x1", 484+((64*3/9)*8)-230)
+        .attr("x2", 484+((64*3/9)*8)-230)
+        .attr("y1", 26)
+        .attr("y2", 45)
+        .style("stroke-width", 1)
+        .style("stroke", "#220747");
+          
+        // Auto line
+        detailsvg.append("line")
+            .attr("x1", 46)
+            .attr("y1", 70)
+            .attr("x2", 46)
+            .attr("y2", 70)
+            .attr("stroke-width", 2)
+            .attr("stroke", "#220747")
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*2)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*3)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*4)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*5)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*6)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*7)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*8)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*9)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*10)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*11)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*12)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*13)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*14)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*15)
+            .transition()
+            .duration(1000)
+            .attr("x2", 47*16);
+        
+        // This part is very long because putting in helper functions is disabling it for some reason
+        
+        //TRANSITION
+        updateMapAndCircles(2002);
+        setTimeout(function () {
+                updateMapAndCircles(2003);}, 1000);
+        setTimeout(function () {
+                updateMapAndCircles(2004);}, 2000);
+        setTimeout(function () {
+                updateMapAndCircles(2005);}, 3000);
+        setTimeout(function () {
+                updateMapAndCircles(2006);}, 4000);
+        setTimeout(function () {
+                updateMapAndCircles(2007);}, 5000);
+        setTimeout(function () {
+                updateMapAndCircles(2008);}, 6000);
+        setTimeout(function () {
+                updateMapAndCircles(2009);}, 7000);
+        setTimeout(function () {
+                updateMapAndCircles(2010);}, 8000);
+        setTimeout(function () {
+                updateMapAndCircles(2011);}, 9000);
+        setTimeout(function () {
+                updateMapAndCircles(2012);}, 10000);
+        setTimeout(function () {
+                updateMapAndCircles(2013);}, 11000);
+        setTimeout(function () {
+                updateMapAndCircles(2014);}, 12000);
+        setTimeout(function () {
+                updateMapAndCircles(2015);}, 13000);
+        setTimeout(function () {
+                updateMapAndCircles(2016);}, 14000);
+        setTimeout(function () {
+                updateMapAndCircles(2017);}, 15000);
+        
+        // Remember to enable expansion when done! Again, somehow we could turn this into helper functions?
+        
+        setTimeout(function () {
+            afghanContainer.on("click", function(d) {
+            if (afghanFirstClick) {
+                afghanFirstClick = false;
+                growContainer(afghanContainer, "#afghanSideDiv");
+                shrinkContainer(pakContainer, "#pakSideDiv");
+                shrinkContainer(yemContainer, "#yemSideDiv");
+                shrinkContainer(somContainer, "#somSideDiv");  
+            }
+            
+            else {
+                afghanFirstClick = true;
+                returnNormal(afghanContainer);
+            }
+            updateMapAndCircles(slider.attr('value'));         
+        });
+        }, 15000);
+    
+        setTimeout(function () {
+        pakContainer.on("click", function(d) {
+            if (pakFirstClick) {
+                pakFirstClick = false;
+                growContainer(pakContainer, "#pakSideDiv");
+                shrinkContainer(afghanContainer, "#afghanSideDiv");
+                shrinkContainer(yemContainer, "#yemSideDiv");
+                shrinkContainer(somContainer, "#somSideDiv");            
+
+                d3.event.stopPropagation();
+            }
+            
+            else {
+                pakFirstClick = true;
+                returnNormal(pakContainer);
+            }
+            updateMapAndCircles(slider.attr('value'));          
+        });
+        }, 15000);
+    
+        setTimeout(function () {
+        yemContainer.on("click", function(d) {
+            if (yemFirstClick) {
+                yemFirstClick = false;
+                growContainer(yemContainer, "#yemSideDiv");
+                shrinkContainer(afghanContainer, "#afghanSideDiv");
+                shrinkContainer(pakContainer, "#pakSideDiv");
+                shrinkContainer(somContainer, "#somSideDiv");            
+
+                d3.event.stopPropagation();
+            }
+            
+            else {
+                yemFirstClick = true;
+                returnNormal(yemContainer);
+            }
+            updateMapAndCircles(slider.attr('value'));          
+        });
+        }, 15000);
+        
+        setTimeout(function () {
+        somContainer.on("click", function(d) {
+            if (somFirstClick) {
+                somFirstClick = false;
+                growContainer(somContainer, "#somSideDiv");
+                shrinkContainer(afghanContainer, "#afghanSideDiv");
+                shrinkContainer(pakContainer, "#pakSideDiv");
+                shrinkContainer(yemContainer, "#yemSideDiv");            
+
+                d3.event.stopPropagation();
+            }
+            
+            else {
+                somFirstClick = true;
+                returnNormal(somContainer);
+            }
+            updateMapAndCircles(slider.attr('value'));          
+        });
+        }, 15000);
+        
+
+    });
+    
+		</script>
+	</body>
+</html>
